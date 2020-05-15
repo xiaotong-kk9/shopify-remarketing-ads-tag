@@ -1,0 +1,93 @@
+<!-- add_google_ads_remarketing_code_to_shopify_for_retail Step2 -->
+
+<!-- FeedArmy tutorial found at https://feedarmy.com/kb/adding-google-adwords-remarketing-tag-to-shopify/ -->
+<!-- 账户操作官方文档：Steps to implement dynamic remarketing https://support.google.com/google-ads/answer/3103357 -->
+
+<!-- Add below snippet to checkout | 为结账添加如下代码 -->
+<!--
+    如何找到结账并添加代码？
+    Settings > Checkout(scroll down) > Order Processing > Additional scripts
+    将代码贴在框里并保存
+ -->
+
+<!-- Google Ads Remarketing Tag By FeedArmy Version 2.11 START -->
+
+<!-- CODE SETTINGS START | 参数配置(共四个部分) -->
+<!-- 1 -->
+<!-- Please add your Google Ads Audience Source Tag ID | 请添加你的 Google Ads 受众群体来源的 Tag ID -->
+<!--
+    如何找到 Google Ads 受众群体来源的 Tag ID？
+    Google Ads > 工具与设置 > 受众群体管理器 > 受众群体来源 > Google Ads 代码详细信息 > 代码设置 > 使用 Google 跟踪代码管理器 > 转化 ID 
+    将下面的 AW-000000000 的数字部分替换为转化 ID
+ -->
+{% assign fa_google_ads_audience_tag_id = 000000000 %}
+
+<!-- 2 -->
+<!-- Please add your alpha2 code, you can find it here: https://help.shopify.com/en/api/custom-storefronts/storefront-api/reference/enum/countrycode -->
+<!-- 
+    请添加你的 alpha2 code
+    从 https://help.shopify.com/en/api/custom-storefronts/storefront-api/reference/enum/countrycode 中找到目标国家字母缩写
+    将下面的 US 替换掉
+-->
+{% assign fa_product_id_alpha2_code = 'US' %}
+
+<!-- 3 -->
+<!-- if you have prices such as 1,000.00 set below to true, if you have prices such as 1.000,00 set below to false -->
+<!-- 如果商品价格格式为 1,000.00，无需替换；如果商品价格格式为 1.000,00，将下面的 true 替换为 false -->
+{% assign fa_prices_with_decimal_separator = true %}
+
+<!-- 4 -->
+<!-- set your product id values are default, product_id, parent_id, sku-->
+<!-- 
+    检查 Google Merchant Center > Products > List
+    如果ID是shopify_US_81191654332_1055121650148这种形式，无需替换
+    如果ID是1055121650148这种形式，将下面的default替换为product_id
+    如果ID是Main ID 81191654332这种形式，将下面的default替换为parent_id
+    如果ID是sku，将下面的default替换为sku
+ -->
+{% assign fa_product_id = 'default' %}
+
+<!-- CODE SETTINGS END | 参数配置结束 -->
+
+<!-- ======================== -->
+<!-- DO NOT EDIT ANYTHING BELOW THIS LINE -->
+<!-- Global site tag (gtag.js) - Ads. -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=AW-{{ fa_google_ads_audience_tag_id }}"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'AW-{{ fa_google_ads_audience_tag_id }}');
+</script>
+<!-- Global site tag (gtag.js) - Ads. -->
+{% if fa_prices_with_decimal_separator == true %}
+		{% assign fa_product_price = checkout.total_price | money_without_currency | remove:',' %}
+{% else %}
+		{% assign fa_product_price = checkout.total_price | money_without_currency | remove:'.' | replace: ',', '.' %}
+{% endif %}
+
+{% assign fa_event = 'purchase' %}
+
+<script>
+  gtag('event', '{{ fa_event }}', {
+    'send_to': 'AW-{{ fa_google_ads_audience_tag_id }}',
+	  'value': {{ fa_product_price }},
+	  'items': [
+	{% for item in checkout.line_items %}
+	{
+		{% if fa_product_id == 'default' %}
+			'id': 'shopify_{{ fa_product_id_alpha2_code }}_{{ item.product_id }}_{{ item.variant_id }}',
+		{% elsif fa_product_id == 'product_id' %}
+			'id': '{{ item.variant_id }}',
+		{% elsif fa_product_id == 'parent_id' %}
+			'id': '{{ item.parent_id }}',
+		{% elsif fa_product_id == 'sku' %}
+			'id': '{{ item.sku }}',
+		{% endif %}
+      'google_business_vertical': 'retail'
+    },
+	{% endfor %}
+	]
+  });
+</script>
+<!-- Google Ads Remarketing Tag By FeedArmy Version 2.11 END -->
